@@ -1,6 +1,6 @@
 ## Throttle ScrollBar
 
-I thought this might need throttling so I made a semaphore to prevent a reload if one was already in progress. **I was wrong!** Apparently, this is all baked into the `vScrollBar.Scroll` event because the debug line never once executed no matter how fast or long the scrollbar was pulled.
+I thought this might need throttling so I made a semaphore to prevent a reload if one was already in progress. **I was wrong!** Apparently, this is all baked into the `trackBar.Scroll` event because the debug line never once executed no matter how fast or long the scrollbar was pulled.
 
 [![mockup][1]][1]
 
