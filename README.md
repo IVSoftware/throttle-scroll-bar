@@ -6,84 +6,81 @@ I thought this might need throttling so I made a semaphore to prevent a reload i
 
 [![memory monitor][2]][2]
 ```
-namespace throttle_scroll_bar
+public partial class MainForm : Form
 {
-    public partial class MainForm : Form
+    public MainForm()
     {
-        public MainForm()
+        InitializeComponent();
+        trackBar.Scroll += (sender, e) =>
         {
-            InitializeComponent();
-            vScrollBar.Scroll += (sender, e) =>
+            if (_isScrollBusy.Wait(0))
             {
-                if (_isScrollBusy.Wait(0))
+                try
                 {
-                    try
-                    {
-                        var image = RotateImageByExifOrientationData(localGetImagePath());
-                        pictureBox.Image?.Dispose();
-                        pictureBox.Image = image;
-                        pictureBox.Refresh();
-                    }
-                    finally
-                    {
-                        _isScrollBusy.Release();
-                    }
+                    var image = RotateImageByExifOrientationData(localGetImagePath());
+                    pictureBox.Image?.Dispose();
+                    pictureBox.Image = image;
+                    pictureBox.Refresh();
                 }
-                else
+                finally
                 {
-                    Debug.WriteLine($"{DateTime.Now.ToLongTimeString()} Busy");
+                    _isScrollBusy.Release();
                 }
-            };
-            string localGetImagePath()
+            }
+            else
             {
-                while(true)
+                Debug.WriteLine($"{DateTime.Now.ToLongTimeString()} Busy");
+            }
+        };
+        string localGetImagePath()
+        {
+            while(true)
+            {
+                var image = Path.Combine(
+                    AppDomain.CurrentDomain.BaseDirectory,
+                    "Images",
+                    $"Image.{_random.Next(1, 5):D2}.jpg");
+                if(image != _prevImage)
                 {
-                    var image = Path.Combine(
-                        AppDomain.CurrentDomain.BaseDirectory,
-                        "Images",
-                        $"Image.{_random.Next(1, 5):D2}.jpg");
-                    if(image != _prevImage)
-                    {
-                        _prevImage = image;
-                        return image;
-                    }
+                    _prevImage = image;
+                    return image;
                 }
             }
         }
-        SemaphoreSlim _isScrollBusy = new SemaphoreSlim(1, 1);
-        string? _prevImage = null;
-        Random _random = new Random();
-        // EXIF orientation tag
-        const int EXIF_ORIENTATION_TAG = 0x0112;
+    }
+    SemaphoreSlim _isScrollBusy = new SemaphoreSlim(1, 1);
+    string? _prevImage = null;
+    Random _random = new Random();
+    // EXIF orientation tag
+    const int EXIF_ORIENTATION_TAG = 0x0112;
 
-        private Image RotateImageByExifOrientationData(string imageLocation)
+    private Image RotateImageByExifOrientationData(string imageLocation)
+    {
+        Image img = Image.FromFile(imageLocation);
+        if (img.PropertyIdList.FirstOrDefault(_=>_ == EXIF_ORIENTATION_TAG) is int id)
         {
-            Image img = Image.FromFile(imageLocation);
-            if (img.PropertyIdList.FirstOrDefault(_=>_ == EXIF_ORIENTATION_TAG) is int id)
-            {
-                img.RotateFlip(ToRotateFlipType(img.GetPropertyItem(id)!.Value!.First()));
-            }
-            return img;
+            img.RotateFlip(ToRotateFlipType(img.GetPropertyItem(id)!.Value!.First()));
         }
-        private RotateFlipType ToRotateFlipType(int orientation)
+        return img;
+    }
+    private RotateFlipType ToRotateFlipType(int orientation)
+    {
+        switch (orientation)
         {
-            switch (orientation)
-            {
-                case 1: return RotateFlipType.RotateNoneFlipNone;
-                case 2: return RotateFlipType.RotateNoneFlipX;
-                case 3: return RotateFlipType.Rotate180FlipNone;
-                case 4: return RotateFlipType.Rotate180FlipX;
-                case 5: return RotateFlipType.Rotate90FlipX;
-                case 6: return RotateFlipType.Rotate90FlipNone;
-                case 7: return RotateFlipType.Rotate270FlipX;
-                case 8: return RotateFlipType.Rotate270FlipNone;
-                default: return RotateFlipType.RotateNoneFlipNone;
-            }
+            case 1: return RotateFlipType.RotateNoneFlipNone;
+            case 2: return RotateFlipType.RotateNoneFlipX;
+            case 3: return RotateFlipType.Rotate180FlipNone;
+            case 4: return RotateFlipType.Rotate180FlipX;
+            case 5: return RotateFlipType.Rotate90FlipX;
+            case 6: return RotateFlipType.Rotate90FlipNone;
+            case 7: return RotateFlipType.Rotate270FlipX;
+            case 8: return RotateFlipType.Rotate270FlipNone;
+            default: return RotateFlipType.RotateNoneFlipNone;
         }
     }
 }
 ```
 
 
-  [1]: https://i.stack.imgur.com/J9NiE.png
+  [1]: https://i.stack.imgur.com/oQDhw.png
   [2]: https://i.stack.imgur.com/vKmuc.png

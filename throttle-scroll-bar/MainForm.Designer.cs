@@ -28,48 +28,51 @@
         /// </summary>
         private void InitializeComponent()
         {
-            vScrollBar = new VScrollBar();
             pictureBox = new PictureBox();
+            trackBar = new TrackBar();
             ((System.ComponentModel.ISupportInitialize)pictureBox).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)trackBar).BeginInit();
             SuspendLayout();
-            // 
-            // vScrollBar
-            // 
-            vScrollBar.Dock = DockStyle.Right;
-            vScrollBar.Location = new Point(552, 0);
-            vScrollBar.Maximum = 3000;
-            vScrollBar.Name = "vScrollBar";
-            vScrollBar.Size = new Size(39, 878);
-            vScrollBar.TabIndex = 0;
             // 
             // pictureBox
             // 
-            pictureBox.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            pictureBox.Location = new Point(12, 15);
+            pictureBox.Dock = DockStyle.Top;
+            pictureBox.Location = new Point(10, 10);
             pictureBox.Name = "pictureBox";
-            pictureBox.Size = new Size(525, 525);
+            pictureBox.Size = new Size(596, 525);
             pictureBox.SizeMode = PictureBoxSizeMode.Zoom;
             pictureBox.TabIndex = 2;
             pictureBox.TabStop = false;
+            // 
+            // trackBar
+            // 
+            trackBar.Dock = DockStyle.Bottom;
+            trackBar.Location = new Point(10, 564);
+            trackBar.Maximum = 3000;
+            trackBar.Name = "trackBar";
+            trackBar.Size = new Size(596, 69);
+            trackBar.TabIndex = 3;
             // 
             // MainForm
             // 
             AutoScaleDimensions = new SizeF(10F, 25F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.Azure;
-            ClientSize = new Size(591, 878);
+            ClientSize = new Size(616, 643);
+            Controls.Add(trackBar);
             Controls.Add(pictureBox);
-            Controls.Add(vScrollBar);
             Name = "MainForm";
+            Padding = new Padding(10);
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Main Form";
             ((System.ComponentModel.ISupportInitialize)pictureBox).EndInit();
+            ((System.ComponentModel.ISupportInitialize)trackBar).EndInit();
             ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion
-
-        private VScrollBar vScrollBar;
         private PictureBox pictureBox;
+        private TrackBar trackBar;
     }
 }
