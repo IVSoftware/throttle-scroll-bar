@@ -1,14 +1,7 @@
-using IVSoftware.Portable;
 using System.Diagnostics;
 
 namespace throttle_scroll_bar
 {
-    enum DisposeModeForTest
-    {
-        None,
-        ThrowsException,
-        WorksButUnnecessary
-    }
     public partial class MainForm : Form
     {
         public MainForm()
@@ -18,36 +11,22 @@ namespace throttle_scroll_bar
             {
                 if (_isScrollBusy.Wait(0))
                 {
-                    BeginInvoke(() =>
+                    try
                     {
-                        try
-                        {
-                            localReload();
-                        }
-                        finally
-                        {
-                            _isScrollBusy.Release();
-                        }
-                    });
+                        var image = RotateImageByExifOrientationData(localGetImagePath());
+                        pictureBox.Image?.Dispose();
+                        pictureBox.Image = image;
+                        pictureBox.Refresh();
+                    }
+                    finally
+                    {
+                        _isScrollBusy.Release();
+                    }
                 }
-                _wdtLoad.StartOrRestart(
-                initialAction: () =>
+                else
                 {
-                    _stopwatch.Restart();
-                    _count = 0;
-                },
-                completeAction: () =>
-                {
-                    _stopwatch.Stop();
-                    BeginInvoke(() =>
-                    {
-                        localReload();
-                    });
-                });
-            };
-            enableThrottle.CheckedChanged += (sender, e) =>
-            {
-                enableThrottle.BackColor = enableThrottle.Checked ? Color.DarkBlue : Color.RoyalBlue;
+                    Debug.WriteLine($"{DateTime.Now.ToLongTimeString()} Busy");
+                }
             };
             string localGetImagePath()
             {
@@ -64,50 +43,36 @@ namespace throttle_scroll_bar
                     }
                 }
             }
-            async void localReload()
+        }
+        SemaphoreSlim _isScrollBusy = new SemaphoreSlim(1, 1);
+        string? _prevImage = null;
+        Random _random = new Random();
+        // EXIF orientation tag
+        const int EXIF_ORIENTATION_TAG = 0x0112;
+
+        private Image RotateImageByExifOrientationData(string imageLocation)
+        {
+            Image img = Image.FromFile(imageLocation);
+            if (img.PropertyIdList.FirstOrDefault(_=>_ == EXIF_ORIENTATION_TAG) is int id)
             {
-                var testMode = DisposeModeForTest.None;
-
-                switch (testMode)
-                {
-                    case DisposeModeForTest.None:
-                        pictureBox.ImageLocation = localGetImagePath();
-                        break;
-                    case DisposeModeForTest.ThrowsException:
-                        // Doesn't work, period.
-                        pictureBox.Image?.Dispose();
-                        pictureBox.ImageLocation = localGetImagePath();
-                        break;
-                    case DisposeModeForTest.WorksButUnnecessary:
-                        var toDispose = pictureBox.Image;
-                        pictureBox.ImageLocation = localGetImagePath();
-
-                        // If you delay the automatic disposal by capturing a
-                        // reference to the previous image, the "average" memory
-                        // use increases because GC is delayed.
-                        await Task.Delay(1000);
-                        toDispose?.Dispose();
-                        break;
-                }
+                img.RotateFlip(ToRotateFlipType(img.GetPropertyItem(id)!.Value!.First()));
+            }
+            return img;
+        }
+        private RotateFlipType ToRotateFlipType(int orientation)
+        {
+            switch (orientation)
+            {
+                case 1: return RotateFlipType.RotateNoneFlipNone;
+                case 2: return RotateFlipType.RotateNoneFlipX;
+                case 3: return RotateFlipType.Rotate180FlipNone;
+                case 4: return RotateFlipType.Rotate180FlipX;
+                case 5: return RotateFlipType.Rotate90FlipX;
+                case 6: return RotateFlipType.Rotate90FlipNone;
+                case 7: return RotateFlipType.Rotate270FlipX;
+                case 8: return RotateFlipType.Rotate270FlipNone;
+                default: return RotateFlipType.RotateNoneFlipNone;
             }
         }
-        CheckBox enableThrottle = new CheckBox
-        {
-            BackColor = Color.RoyalBlue,
-            Appearance = Appearance.Button,
-            Height = 75,
-            Width = 125,
-            Text = "Throttle",
-            ForeColor = Color.White,
-        };
-        SemaphoreSlim _isScrollBusy = new SemaphoreSlim(1,1);
-
-        // <PackageReference Include = "IVSoftware.Portable.WatchdogTimer" Version="1.2.1" />
-        WatchdogTimer _wdtLoad = new WatchdogTimer { Interval = TimeSpan.FromSeconds(0.5) };
-
-        Stopwatch _stopwatch = new Stopwatch();
-        int _count = 0;
-        string _prevImage = null;
-        Random _random = new Random();
     }
 }
